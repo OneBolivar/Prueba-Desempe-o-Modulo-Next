@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { Space } from "@/types/space";
 
 export default function AdminSpacesPage() {
@@ -186,8 +187,13 @@ export default function AdminSpacesPage() {
             >
               <div>
                 <div className="relative h-44 w-full bg-gray-100 dark:bg-slate-800 overflow-hidden">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={s.imageUrl} alt={s.name} className="w-full h-full object-cover" />
+                  <Image
+                    src={s.imageUrl}
+                    alt={s.name}
+                    fill
+                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                    className="object-cover"
+                  />
                   <div className="absolute top-3 left-3">
                     <span className="bg-black/75 backdrop-blur-md text-white text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full">
                       {s.type}

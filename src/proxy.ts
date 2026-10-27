@@ -34,7 +34,7 @@ function decodeJwtPayload(token: string): DecodedTokenPayload | null {
   }
 }
 
-export function middleware(request: NextRequest): NextResponse {
+export function proxy(request: NextRequest): NextResponse {
   const { pathname } = request.nextUrl;
 
   // 1. Control de Rate Limiting por IP (100 peticiones por minuto)
@@ -100,6 +100,9 @@ export function middleware(request: NextRequest): NextResponse {
   return response;
 }
 
+// Compatibilidad simétrica con convención middleware de Next.js
+export const middleware = proxy;
+
 export const config = {
   matcher: [
     "/login",
@@ -109,4 +112,5 @@ export const config = {
     "/reservas/:path*",
     "/perfil/:path*",
   ],
-};  
+};
+

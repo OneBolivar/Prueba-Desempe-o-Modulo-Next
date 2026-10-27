@@ -1,12 +1,12 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect } from "react";
-import { Locale, dictionaries } from "./dictionaries";
+import { Locale, Dictionary, dictionaries } from "./dictionaries";
 
 interface I18nContextType {
   locale: Locale;
   setLocale: (lang: Locale) => void;
-  t: typeof dictionaries["es"];
+  t: Dictionary;
 }
 
 const I18nContext = createContext<I18nContextType | undefined>(undefined);
@@ -26,8 +26,10 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
     localStorage.setItem("cospace_locale", lang);
   };
 
+  const currentDict = dictionaries[locale] as Dictionary;
+
   return (
-    <I18nContext.Provider value={{ locale, setLocale, t: dictionaries[locale] }}>
+    <I18nContext.Provider value={{ locale, setLocale, t: currentDict }}>
       {children}
     </I18nContext.Provider>
   );

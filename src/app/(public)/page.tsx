@@ -2,9 +2,11 @@
 
 import React, { useEffect, useState, useCallback } from "react";
 import { Space, SpaceFilters } from "@/types/space";
-import { SpaceCard } from "@/components/SpaceCard";
+import { SpaceCard } from "@/components/spaces/SpaceCard";
+import { useI18n } from "@/i18n/I18nContext";
 
 export default function HomePage() {
+  const { t } = useI18n();
   const [spaces, setSpaces] = useState<Space[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [filters, setFilters] = useState<SpaceFilters>({
@@ -57,13 +59,13 @@ export default function HomePage() {
       <section className="mb-8">
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#8B5CF6]/15 text-[#6D28D9] dark:text-[#A78BFA] text-xs font-bold uppercase tracking-wider mb-3">
           <span className="w-2 h-2 rounded-full bg-[#EC4899] animate-pulse" />
-          Disponibilidad en tiempo real
+          {t.home.tag}
         </div>
         <h1 className="text-3xl sm:text-5xl font-black text-[#111827] dark:text-white tracking-tight">
-          Espacios diseñados para tu enfoque
+          {t.home.title}
         </h1>
         <p className="mt-2 text-sm sm:text-base text-gray-500 dark:text-slate-400 max-w-2xl font-medium">
-          Reserva escritorios compartidos, oficinas privadas y cabinas insonorizadas por hora sin contratos permanentes.
+          {t.home.subtitle}
         </p>
       </section>
 
@@ -73,25 +75,25 @@ export default function HomePage() {
           {/* Filtro: Tipo de Espacio */}
           <div>
             <label className="block text-[11px] font-bold uppercase tracking-wider text-gray-600 dark:text-slate-300 mb-1.5">
-              Tipo de espacio
+              {t.home.filterType}
             </label>
             <select
               name="type"
               value={filters.type}
               onChange={handleFilterChange}
-              className="w-full px-3.5 py-2.5 text-xs sm:text-sm font-semibold rounded-xl border border-gray-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-[#6D28D9] bg-gray-50/50 dark:bg-slate-800 text-gray-800 dark:text-slate-200 hover:bg-white dark:hover:bg-slate-750 transition-all"
+              className="w-full px-3.5 py-2.5 text-xs sm:text-sm font-semibold rounded-xl border border-gray-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-[#6D28D9] bg-gray-50/50 dark:bg-slate-800 text-gray-800 dark:text-slate-200 hover:bg-white dark:hover:bg-slate-750 transition-all cursor-pointer"
             >
-              <option value="">Todos los tipos</option>
-              <option value="Escritorio">Escritorio</option>
-              <option value="Sala de reuniones">Sala de reuniones</option>
-              <option value="Cabina">Cabina</option>
+              <option value="">{t.home.allTypes}</option>
+              <option value="Escritorio">{t.home.desk}</option>
+              <option value="Sala de reuniones">{t.home.meetingRoom}</option>
+              <option value="Cabina">{t.home.booth}</option>
             </select>
           </div>
 
           {/* Filtro: Capacidad Mínima */}
           <div>
             <label className="block text-[11px] font-bold uppercase tracking-wider text-gray-600 dark:text-slate-300 mb-1.5">
-              Capacidad mínima (pers.)
+              {t.home.filterCapacity}
             </label>
             <input
               type="number"
@@ -107,7 +109,7 @@ export default function HomePage() {
           {/* Filtro: Precio Máximo */}
           <div>
             <label className="block text-[11px] font-bold uppercase tracking-wider text-gray-600 dark:text-slate-300 mb-1.5">
-              Precio máx. hora (COP)
+              {t.home.filterPrice}
             </label>
             <input
               type="number"
@@ -126,9 +128,9 @@ export default function HomePage() {
             <button
               onClick={handleClearFilters}
               type="button"
-              className="w-full py-2.5 px-4 text-xs sm:text-sm font-bold text-gray-700 dark:text-slate-300 bg-gray-100 dark:bg-slate-800 hover:bg-gray-200 dark:hover:bg-slate-700 rounded-xl transition-all active:scale-98"
+              className="w-full py-2.5 px-4 text-xs sm:text-sm font-bold text-gray-700 dark:text-slate-300 bg-gray-100 dark:bg-slate-800 hover:bg-gray-200 dark:hover:bg-slate-700 rounded-xl transition-all active:scale-95 cursor-pointer"
             >
-              Restablecer
+              {t.home.resetFilters}
             </button>
           </div>
         </div>
@@ -153,13 +155,13 @@ export default function HomePage() {
       ) : spaces.length === 0 ? (
         <div className="text-center py-20 bg-white dark:bg-[#1E293B] rounded-3xl border border-dashed border-gray-200 dark:border-slate-800">
           <p className="text-base font-bold text-gray-700 dark:text-slate-300">
-            No se encontraron espacios con los filtros indicados.
+            {t.home.emptyState}
           </p>
           <button
             onClick={handleClearFilters}
-            className="mt-3 px-4 py-2 text-xs font-bold text-[#6D28D9] dark:text-[#A78BFA] hover:underline"
+            className="mt-3 px-4 py-2 text-xs font-bold text-[#6D28D9] dark:text-[#A78BFA] hover:underline cursor-pointer"
           >
-            Limpiar filtros y ver todos
+            {t.home.clearFilters}
           </button>
         </div>
       ) : (

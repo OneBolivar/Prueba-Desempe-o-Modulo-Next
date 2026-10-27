@@ -1,7 +1,7 @@
 import React, { Suspense } from "react";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { SpaceDetailClient } from "@/components/SpaceDetailClient";
+import { SpaceDetailClient } from "@/components/spaces/SpaceDetailClient";
 import { Space } from "@/types/space";
 
 interface SpaceDetailPageProps {

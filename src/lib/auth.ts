@@ -1,4 +1,4 @@
-import jwt from "jsonwebtoken";
+import jwt, { type SignOptions } from "jsonwebtoken";
 import bcrypt from "bcryptjs";
 import { cookies } from "next/headers";
 import { TokenPayload } from "@/types/auth";
@@ -15,14 +15,17 @@ export async function comparePassword(plain: string, hashed: string): Promise<bo
   return bcrypt.compare(plain, hashed);
 }
 
-// Generación de Access Token (15 minutos)
+const ACCESS_EXPIRES = (process.env.ACCESS_TOKEN_EXPIRES_IN || "15m") as NonNullable<SignOptions["expiresIn"]>;
+const REFRESH_EXPIRES = (process.env.REFRESH_TOKEN_EXPIRES_IN || "7d") as NonNullable<SignOptions["expiresIn"]>;
+
+// Generación de Access Token (15 minutos por defecto)
 export function signAccessToken(payload: TokenPayload): string {
-  return jwt.sign(payload, ACCESS_SECRET, { expiresIn: "15m" });
+  return jwt.sign(payload, ACCESS_SECRET, { expiresIn: ACCESS_EXPIRES });
 }
 
-// Generación de Refresh Token (7 días)
+// Generación de Refresh Token (7 días por defecto)
 export function signRefreshToken(payload: TokenPayload): string {
-  return jwt.sign(payload, REFRESH_SECRET, { expiresIn: "7d" });
+  return jwt.sign(payload, REFRESH_SECRET, { expiresIn: REFRESH_EXPIRES });
 }
 
 // Verificación de tokens

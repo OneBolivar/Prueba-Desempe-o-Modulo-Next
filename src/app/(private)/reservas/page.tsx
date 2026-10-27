@@ -3,8 +3,11 @@
 import React, { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { Booking } from "@/types/booking";
+import { BookingCard } from "@/components/bookings/BookingCard";
+import { useI18n } from "@/i18n/I18nContext";
 
 export default function BookingsPage() {
+  const { t } = useI18n();
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [cancellingId, setCancellingId] = useState<string | null>(null);
@@ -20,18 +23,18 @@ export default function BookingsPage() {
         setBookings(data.bookings || []);
       }
     } catch {
-      setFeedback({ type: "error", text: "No se pudieron cargar tus reservas." });
+      setFeedback({ type: "error", text: t.bookings.cancelError });
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [t.bookings.cancelError]);
 
   useEffect(() => {
     fetchBookings();
   }, [fetchBookings]);
 
   const handleCancelBooking = async (id: string) => {
-    if (!confirm("¿Estás seguro de que deseas cancelar esta reserva?")) {
+    if (!confirm(t.bookings.confirmCancelPrompt)) {
       return;
     }
 
@@ -46,17 +49,17 @@ export default function BookingsPage() {
       const data = await res.json();
 
       if (!res.ok) {
-        setFeedback({ type: "error", text: data.error || "No se pudo cancelar la reserva." });
+        setFeedback({ type: "error", text: data.error || t.bookings.cancelError });
         return;
       }
 
-      setFeedback({ type: "success", text: "Reserva cancelada exitosamente." });
+      setFeedback({ type: "success", text: t.bookings.cancelSuccess });
       // Actualizar estado local
       setBookings((prev) =>
         prev.map((b) => (b.id === id ? { ...b, status: "CANCELLED" } : b))
       );
     } catch {
-      setFeedback({ type: "error", text: "Error de conexión al cancelar la reserva." });
+      setFeedback({ type: "error", text: t.bookings.cancelError });
     } finally {
       setCancellingId(null);
     }
@@ -73,28 +76,28 @@ export default function BookingsPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#8B5CF6]/15 text-[#6D28D9] dark:text-[#A78BFA] text-xs font-bold uppercase tracking-wider mb-2">
-            Gestión Personal
+            {t.bookings.userPanel}
           </div>
           <h1 className="text-2xl sm:text-4xl font-black text-[#111827] dark:text-white tracking-tight">
-            Mis Reservas
+            {t.bookings.title}
           </h1>
           <p className="text-xs sm:text-sm text-gray-500 dark:text-slate-400 mt-1">
-            Revisa el estado de tus reservas de espacios de trabajo y administra cancelaciones.
+            {t.bookings.subtitle}
           </p>
         </div>
 
         <Link
           href="/"
-          className="self-start sm:self-auto px-4 py-2.5 text-xs sm:text-sm font-bold rounded-xl text-white bg-[#6D28D9] hover:bg-[#5B21B6] transition-all shadow-md shadow-purple-600/20"
+          className="self-start sm:self-auto px-4 py-2.5 text-xs sm:text-sm font-bold rounded-xl text-white bg-[#6D28D9] hover:bg-[#5B21B6] transition-all shadow-md shadow-purple-600/20 active:scale-95"
         >
-          + Explorar Más Espacios
+          {t.bookings.exploreMore}
         </Link>
       </div>
 
       {/* Alerta de feedback */}
       {feedback && (
         <div
-          className={`p-4 text-xs sm:text-sm rounded-2xl border flex items-center justify-between ${
+          className={`p-4 text-xs sm:text-sm rounded-2xl border flex items-center justify-between transition-all ${
             feedback.type === "success"
               ? "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-200 border-emerald-200 dark:border-emerald-800"
               : "bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-300 border-red-200 dark:border-red-900"
@@ -105,7 +108,7 @@ export default function BookingsPage() {
             onClick={() => setFeedback(null)}
             className="text-xs font-bold underline ml-4 cursor-pointer"
           >
-            Cerrar
+            {t.bookings.closeAlert}
           </button>
         </div>
       )}
@@ -120,7 +123,7 @@ export default function BookingsPage() {
               : "bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-slate-300 hover:bg-gray-200 dark:hover:bg-slate-700"
           }`}
         >
-          Todas ({bookings.length})
+          {t.bookings.filterAll} ({bookings.length})
         </button>
         <button
           onClick={() => setStatusFilter("CONFIRMED")}
@@ -130,7 +133,7 @@ export default function BookingsPage() {
               : "bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-slate-300 hover:bg-gray-200 dark:hover:bg-slate-700"
           }`}
         >
-          Confirmadas ({bookings.filter((b) => b.status === "CONFIRMED").length})
+          {t.bookings.filterConfirmed} ({bookings.filter((b) => b.status === "CONFIRMED").length})
         </button>
         <button
           onClick={() => setStatusFilter("CANCELLED")}
@@ -140,7 +143,7 @@ export default function BookingsPage() {
               : "bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-slate-300 hover:bg-gray-200 dark:hover:bg-slate-700"
           }`}
         >
-          Canceladas ({bookings.filter((b) => b.status === "CANCELLED").length})
+          {t.bookings.filterCancelled} ({bookings.filter((b) => b.status === "CANCELLED").length})
         </button>
       </div>
 
@@ -157,99 +160,25 @@ export default function BookingsPage() {
       ) : filteredBookings.length === 0 ? (
         <div className="text-center py-16 bg-white dark:bg-[#1E293B] rounded-3xl border border-dashed border-gray-200 dark:border-slate-800">
           <p className="text-sm font-bold text-gray-600 dark:text-slate-400">
-            No se encontraron reservas con el filtro seleccionado.
+            {t.bookings.emptyState}
           </p>
           <Link
             href="/"
             className="mt-3 inline-block px-4 py-2 text-xs font-bold text-[#6D28D9] dark:text-[#A78BFA] hover:underline"
           >
-            Reservar un nuevo espacio &rarr;
+            {t.bookings.bookNewSpace} &rarr;
           </Link>
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-4">
-          {filteredBookings.map((booking) => {
-            const start = new Date(booking.startTime);
-            const end = new Date(booking.endTime);
-
-            return (
-              <div
-                key={booking.id}
-                className="bg-white dark:bg-[#1E293B] p-5 sm:p-6 rounded-3xl border border-gray-100 dark:border-slate-800 shadow-xs hover:shadow-md transition-all flex flex-col md:flex-row md:items-center justify-between gap-4"
-              >
-                {/* Espacio y detalles de tiempo */}
-                <div className="flex items-start gap-4">
-                  {booking.space?.imageUrl && (
-                    <div className="hidden sm:block w-20 h-20 rounded-2xl overflow-hidden bg-gray-100 dark:bg-slate-800 shrink-0">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={booking.space.imageUrl}
-                        alt={booking.space.name}
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                  )}
-
-                  <div className="space-y-1">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <h3 className="text-base font-bold text-[#111827] dark:text-white">
-                        {booking.space?.name || "Espacio Coworking"}
-                      </h3>
-                      {booking.space?.type && (
-                        <span className="text-[10px] uppercase font-black px-2.5 py-0.5 rounded-full bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-slate-300">
-                          {booking.space.type}
-                        </span>
-                      )}
-                    </div>
-
-                    <p className="text-xs sm:text-sm text-gray-600 dark:text-slate-300">
-                      📅 {start.toLocaleDateString("es-CO", { weekday: "short", day: "numeric", month: "short", year: "numeric" })}
-                    </p>
-                    <p className="text-xs text-gray-500 dark:text-slate-400">
-                      ⏰ {start.toLocaleTimeString("es-CO", { hour: "2-digit", minute: "2-digit" })} -{" "}
-                      {end.toLocaleTimeString("es-CO", { hour: "2-digit", minute: "2-digit" })} ({booking.totalHours} hr{booking.totalHours > 1 ? "s" : ""})
-                    </p>
-                  </div>
-                </div>
-
-                {/* Precios, Estados y Acción */}
-                <div className="flex flex-wrap sm:flex-nowrap items-center justify-between md:justify-end gap-4 pt-3 md:pt-0 border-t md:border-t-0 border-gray-100 dark:border-slate-800">
-                  <div className="text-left md:text-right">
-                    <span className="text-[10px] uppercase font-bold text-gray-400 dark:text-slate-400 block">
-                      Total Pagado / Acordado
-                    </span>
-                    <span className="text-base sm:text-lg font-black text-[#111827] dark:text-white">
-                      {new Intl.NumberFormat("es-CO", {
-                        style: "currency",
-                        currency: "COP",
-                        maximumFractionDigits: 0,
-                      }).format(booking.totalPrice)}
-                    </span>
-                  </div>
-
-                  <span
-                    className={`px-3 py-1.5 text-xs font-black uppercase tracking-wider rounded-full shrink-0 ${
-                      booking.status === "CONFIRMED"
-                        ? "bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400"
-                        : "bg-red-100 dark:bg-red-950/60 text-red-700 dark:text-red-400"
-                    }`}
-                  >
-                    {booking.status === "CONFIRMED" ? "Confirmada" : "Cancelada"}
-                  </span>
-
-                  {booking.status === "CONFIRMED" && (
-                    <button
-                      onClick={() => handleCancelBooking(booking.id)}
-                      disabled={cancellingId === booking.id}
-                      className="px-3.5 py-2 text-xs font-bold text-red-600 hover:text-white hover:bg-red-600 rounded-xl border border-red-200 dark:border-red-900 transition-colors disabled:opacity-50 cursor-pointer"
-                    >
-                      {cancellingId === booking.id ? "Cancelando..." : "Cancelar Reserva"}
-                    </button>
-                  )}
-                </div>
-              </div>
-            );
-          })}
+          {filteredBookings.map((booking) => (
+            <BookingCard
+              key={booking.id}
+              booking={booking}
+              cancellingId={cancellingId}
+              onCancel={handleCancelBooking}
+            />
+          ))}
         </div>
       )}
     </div>
