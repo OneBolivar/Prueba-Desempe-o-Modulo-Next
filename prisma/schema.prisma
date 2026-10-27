@@ -1,0 +1,68 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum BookingStatus {
+  CONFIRMED
+  CANCELLED
+}
+
+model User {
+  id           String        @id @default(uuid())
+  name         String
+  email        String        @unique
+  password     String
+  role         Role          @default(USER)
+  refreshToken String?
+  bookings     Booking[]
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  @@map("users")
+}
+
+model Space {
+  id           String        @id @default(uuid())
+  name         String
+  description  String
+  type         String        // Ej: "Escritorio", "Sala de reuniones", "Cabina"
+  capacity     Int
+  pricePerHour Float
+  imageUrl     String
+  isActive     Boolean       @default(true)
+  bookings     Booking[]
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  @@map("spaces")
+}
+
+model Booking {
+  id         String        @id @default(uuid())
+  userId     String
+  spaceId    String
+  startTime  DateTime
+  endTime    DateTime
+  totalHours Int
+  totalPrice Float
+  status     BookingStatus @default(CONFIRMED)
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  space Space @relation(fields: [spaceId], references: [id], onDelete: Restrict)
+
+  @@index([spaceId, startTime, endTime])
+  @@index([userId, startTime, endTime])
+  @@map("bookings")
+}
