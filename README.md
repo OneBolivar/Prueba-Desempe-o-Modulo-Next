@@ -99,7 +99,7 @@ El script de inicialización (`prisma/seed.ts`) crea los siguientes usuarios lis
 
 ## 6. Ejecución con Docker
 
-El proyecto incluye un `Dockerfile` optimizado con **Multi-stage build** basado en Alpine Linux (`node:20-alpine`), con empaquetado autónomo (`standalone`), usuario sin privilegios root (`nextjs`) y exclusión de archivos mediante `.dockerignore`.
+El proyecto incluye un `Dockerfile` optimizado con **Multi-stage build** basado en Debian Bookworm (`node:20-slim`) con soporte nativo de **OpenSSL 3.0.x** (`debian-openssl-3.0.x`), empaquetado autónomo (`standalone`), usuario sin privilegios root (`nextjs`), inyección de variables en tiempo de compilación y enlace explícito del Query Engine de Prisma.
 
 ### a. Construir la imagen de Docker
 ```bash
@@ -110,7 +110,7 @@ docker build -t cospace-app .
 ```bash
 docker run -p 3000:3000 --env-file .env cospace-app
 ```
-Una vez levantado el contenedor, accede a [http://localhost:3000](http://localhost:3000).
+Una vez levantado el contenedor, la aplicación y la conexión con Supabase PostgreSQL estarán operativas en [http://localhost:3000](http://localhost:3000).
 
 ---
 
