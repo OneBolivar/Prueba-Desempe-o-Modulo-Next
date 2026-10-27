@@ -10,6 +10,9 @@ Bienvenido a **CoSpace**, una plataforma moderna, ágil y de alto rendimiento di
 - **Framework Principal:** [Next.js 16](https://nextjs.org) utilizando el nuevo motor **App Router con Turbopack**, Cache Components, Partial Prerendering (`PPR`) y empaquetado autónomo (`standalone`).
 - **Librería de Interfaz:** React 19 con componentes de servidor y de cliente optimizados, control estricto de hidratación y supresión de desajustes cliente/servidor.
 - **Sistema de Diseño Visual:** **"Vibrant Workspace"** (Stitch) implementado con Tailwind CSS v4, compatible con modo claro y oscuro, microinteracciones táctiles, badges dinámicos y adaptación responsiva fluida (móviles y PC).
+- **Header / Navbar Premium:** Cabecera fija traslúcida (`backdrop-blur-md bg-white/85 dark:bg-slate-950/80`), detección de ruta activa en tiempo real (`usePathname`), avatar con iniciales dinámicas, badges visuales de rol (`USER` en violeta y `ADMIN` en ámbar), selector integrado de idioma/tema agrupado con división limpia y menú móvil responsive fluido.
+- **Telemetría y Control de Hidratación (Punto 10):** Componente `ClientClock` integrado de forma prominente en el banner del Dashboard, desplegando hora local en vivo con segundos, día de la semana, zona horaria (`Intl.DateTimeFormat`) y diodo emisor de pulso en vivo (`animate-ping`), blindado contra advertencias de desincronización de hidratación mediante bandera `isMounted` y `suppressHydrationWarning`.
+- **Flujo de Redirección Inteligente en Autenticación:** Formularios de `/login` y `/register` con captura y decodificación automática del parámetro de origen `from`, invocación coordinada de `router.refresh()` y navegación inmediata a la ruta solicitada (o `/dashboard` por defecto), respaldados por protección perimetral en `(auth)/layout.tsx` y `src/proxy.ts` que impiden que usuarios autenticados visualicen pantallas de inicio de sesión.
 - **Internacionalización Nativa (i18n):** Sistema bilingüe simétrico (Español / Inglés) con persistencia en cliente (`localStorage`) y conmutador accesible en Navbar.
 - **ORM y Persistencia de Datos:** [Prisma ORM 6](https://www.prisma.io) operando contra una base de datos relacional PostgreSQL alojada en [Supabase](https://supabase.com). Cero datos quemados (*hardcoded*), persistencia transaccional y validación de concurrencia contra traslape de reservas.
 - **Seguridad Perimetral y Autenticación:** Sesiones blindadas mediante cookies `httpOnly`, rotación de tokens JWT (`access_token` de 15m y `refresh_token` de 7d con hash bcrypt en la BD), Rate Limiting por IP (100 req/min) y control perimetral de roles (`USER` y `ADMIN`) gestionado desde `src/proxy.ts`.
@@ -32,7 +35,7 @@ Asegúrate de contar con las siguientes herramientas instaladas en tu entorno de
 Crea un archivo `.env` en la raíz del proyecto tomando como plantilla [.env.example](file:///home/cohorte5/Escritorio/Prueba-Desempe-o-Modulo-Next/.env.example). A continuación se describe cada parámetro requerido:
 
 | Variable | Descripción | Formato / Ejemplo | Obligatoria / Opcional |
-| :--- | :--- | :--- | :---: |
+| :--- | :--- | :--- | :--- :--- |
 | `DATABASE_URL` | Cadena de conexión PostgreSQL con Connection Pooling (PgBouncer). Utilizada por Prisma Client en runtime. | `postgresql://postgres.[REF]:[PASS]@aws-0-[REGION].pooler.supabase.com:5432/postgres?sslmode=require` | **Obligatoria** |
 | `DIRECT_URL` | Conexión directa a PostgreSQL (puerto 5432) sin pooler. Utilizada por Prisma CLI para migraciones y sincronización del esquema. | `postgresql://postgres:[PASS]@db.[REF].supabase.co:5432/postgres?sslmode=require` | **Obligatoria** |
 | `JWT_ACCESS_SECRET` | Clave criptográfica para firmar los tokens de acceso efímeros (15 min). | Cadena segura de 32+ caracteres generada con `openssl rand -base64 32` | **Obligatoria** |
@@ -150,12 +153,12 @@ El código fuente se organiza siguiendo las mejores prácticas de la arquitectur
 │   │   │   ├── admin/          # Panel maestro de ocupación e ingresos (/admin)
 │   │   │   │   └── spaces/     # CRUD de gestión de espacios (/admin/spaces)
 │   │   │   └── layout.tsx      # Layout administrativo aislado
-│   │   ├── (auth)/             # Vistas de autenticación
-│   │   │   ├── login/          # Inicio de sesión con cookies httpOnly (/login)
-│   │   │   ├── register/       # Registro de nuevos usuarios con bcrypt (/register)
-│   │   │   └── layout.tsx      # Layout centrado de autenticación
+│   │   ├── (auth)/             # Vistas de autenticación con protección de sesión activa
+│   │   │   ├── login/          # Inicio de sesión con redirección reactiva (/login)
+│   │   │   ├── register/       # Registro de usuarios con redirección fluida (/register)
+│   │   │   └── layout.tsx      # Layout con guardia de servidor ante usuarios ya autenticados
 │   │   ├── (private)/          # Vistas privadas protegidas para usuarios autenticados
-│   │   │   ├── dashboard/      # Panel de usuario con ClientClock e inversión (/dashboard)
+│   │   │   ├── dashboard/      # Panel con banner de telemetría ClientClock e inversión (/dashboard)
 │   │   │   ├── reservas/       # Historial y cancelación reactiva (/reservas)
 │   │   │   └── layout.tsx      # Layout privado
 │   │   ├── (public)/           # Vistas públicas accesibles
@@ -172,7 +175,7 @@ El código fuente se organiza siguiendo las mejores prácticas de la arquitectur
 │   │   └── not-found.tsx       # Pantalla 404 personalizada con diseño Vibrant Workspace
 │   ├── components/             # Arquitectura modular de componentes UI y de dominio
 │   │   ├── bookings/           # Componentes de reservas (BookingCard)
-│   │   ├── shared/             # Layout global compartido (Navbar, Footer)
+│   │   ├── shared/             # Layout global compartido (Navbar premium, Footer)
 │   │   ├── spaces/             # Dominio de espacios (SpaceCard, SpaceDetailClient)
 │   │   ├── ui/                 # Componentes utilitarios base (ThemeToggle, LanguageToggle, ClientClock, Badge, Spinner)
 │   │   └── index.ts            # Archivo barril con exportaciones modulares
@@ -209,7 +212,7 @@ El código fuente se organiza siguiendo las mejores prácticas de la arquitectur
 ## 9. Despliegue en Producción
 
 > 🚀 **Enlace de Producción en Vercel:**  
-- **URL de Producción:** [https://prueba-desempe-o-modulo-next.vercel.app/](https://prueba-desempe-o-modulo-next.vercel.app/)>
+> **URL de Producción:** [https://prueba-desempe-o-modulo-next.vercel.app/](https://prueba-desempe-o-modulo-next.vercel.app/)
 
 > **Infraestructura de Despliegue:**
 > - **Hosting:** Vercel Edge Network con Serverless & Edge Functions.

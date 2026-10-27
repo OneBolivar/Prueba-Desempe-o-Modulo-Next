@@ -39,7 +39,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => window.removeEventListener("focus", onFocus);
   }, [checkAuth]);
 
-  const login = async (email: string, password: string) => {
+  const login = async (email: string, password: string, redirectTo?: string) => {
     try {
       const res = await fetch("/api/auth/login", {
         method: "POST",
@@ -53,14 +53,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       setUser(data.user);
-      router.push("/dashboard");
+      const destination = redirectTo || "/dashboard";
+      router.refresh();
+      router.push(destination);
       return { success: true };
     } catch {
       return { success: false, error: "Error de conexión con el servidor." };
     }
   };
 
-  const register = async (name: string, email: string, password: string) => {
+  const register = async (name: string, email: string, password: string, redirectTo?: string) => {
     try {
       const res = await fetch("/api/auth/register", {
         method: "POST",
@@ -73,8 +75,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return { success: false, error: data.error || "Error al registrarse." };
       }
 
-      // Iniciar sesión automáticamente tras el registro
-      return await login(email, password);
+      // Iniciar sesión automáticamente tras el registro respetando la ruta destino
+      return await login(email, password, redirectTo);
     } catch {
       return { success: false, error: "Error de conexión con el servidor." };
     }

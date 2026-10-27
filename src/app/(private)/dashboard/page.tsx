@@ -64,38 +64,39 @@ export default function DashboardPage() {
 
   return (
     <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-8 flex-1">
-      {/* Bienvenida y Reloj del Cliente */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#8B5CF6]/15 text-[#6D28D9] dark:text-[#A78BFA] text-xs font-bold uppercase tracking-wider mb-2">
-            {t.dashboard.userPanel}
+      {/* Banner Principal con Bienvenida y Tarjeta de Telemetría ClientClock */}
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-purple-900/10 via-indigo-900/5 to-pink-900/10 dark:from-purple-950/40 dark:via-slate-900/60 dark:to-indigo-950/40 border border-purple-200/70 dark:border-purple-800/40 p-6 sm:p-8 backdrop-blur-sm">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+          <div className="space-y-3 max-w-xl">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#8B5CF6]/15 text-[#6D28D9] dark:text-[#A78BFA] text-xs font-bold uppercase tracking-wider">
+              {t.dashboard.userPanel}
+            </div>
+            <h1 className="text-2xl sm:text-4xl font-black text-[#111827] dark:text-white tracking-tight">
+              {t.dashboard.greeting}, {user?.name || (locale === "es" ? "Colega" : "Colleague")} 👋
+            </h1>
+            <p className="text-xs sm:text-sm text-gray-600 dark:text-slate-300">
+              {t.dashboard.subtitle}
+            </p>
+            <div className="flex items-center gap-3 pt-2">
+              <Link
+                href="/"
+                className="px-4 py-2.5 text-xs sm:text-sm font-bold rounded-xl text-white bg-[#6D28D9] hover:bg-[#5B21B6] transition-all shadow-md shadow-purple-600/20 active:scale-95 cursor-pointer"
+              >
+                {t.dashboard.newBookingBtn}
+              </Link>
+              <Link
+                href="/reservas"
+                className="px-4 py-2.5 text-xs sm:text-sm font-bold rounded-xl text-gray-700 dark:text-slate-200 bg-white dark:bg-[#1E293B] border border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-800 transition-all active:scale-95 cursor-pointer"
+              >
+                {t.dashboard.myBookingsBtn}
+              </Link>
+            </div>
           </div>
-          <h1 className="text-2xl sm:text-4xl font-black text-[#111827] dark:text-white tracking-tight">
-            {t.dashboard.greeting}, {user?.name || (locale === "es" ? "Colega" : "Colleague")} 👋
-          </h1>
-          <p className="text-xs sm:text-sm text-gray-500 dark:text-slate-400 mt-1">
-            {t.dashboard.subtitle}
-          </p>
 
-          {/* Componente ClientClock (Punto 10 de la Rúbrica - Control Estricto de Hidratación) */}
-          <div className="mt-3">
+          {/* Tarjeta de Telemetría (Punto 10 de la Rúbrica - ClientClock con control estricto de hidratación) */}
+          <div className="w-full lg:w-auto shrink-0 flex justify-start lg:justify-end">
             <ClientClock />
           </div>
-        </div>
-
-        <div className="flex items-center gap-3">
-          <Link
-            href="/"
-            className="px-4 py-2.5 text-xs sm:text-sm font-bold rounded-xl text-white bg-[#6D28D9] hover:bg-[#5B21B6] transition-all shadow-md shadow-purple-600/20 active:scale-95"
-          >
-            {t.dashboard.newBookingBtn}
-          </Link>
-          <Link
-            href="/reservas"
-            className="px-4 py-2.5 text-xs sm:text-sm font-bold rounded-xl text-gray-700 dark:text-slate-200 bg-white dark:bg-[#1E293B] border border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-800 transition-all active:scale-95"
-          >
-            {t.dashboard.myBookingsBtn}
-          </Link>
         </div>
       </div>
 
