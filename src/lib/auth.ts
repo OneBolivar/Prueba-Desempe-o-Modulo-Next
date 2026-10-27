@@ -73,8 +73,12 @@ export async function clearAuthCookies(): Promise<void> {
 
 // Obtener la sesión actual desde las cookies del servidor
 export async function getServerSession(): Promise<TokenPayload | null> {
-  const cookieStore = await cookies();
-  const token = cookieStore.get("access_token")?.value;
-  if (!token) return null;
-  return verifyAccessToken(token);
+  try {
+    const cookieStore = await cookies();
+    const token = cookieStore.get("access_token")?.value;
+    if (!token) return null;
+    return verifyAccessToken(token);
+  } catch {
+    return null;
+  }
 }

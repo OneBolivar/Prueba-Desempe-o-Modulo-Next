@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/context/AuthContext";
 import { Navbar } from "@/components/Navbar";
+import { I18nProvider } from "@/i18n/I18nContext";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -25,13 +26,34 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="es">
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased bg-gray-50 text-gray-900 min-h-screen flex flex-col`}>
+    <html lang="es" suppressHydrationWarning>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                try {
+                  const stored = localStorage.getItem('theme');
+                  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                  if (stored === 'dark' || (!stored && prefersDark)) {
+                    document.documentElement.classList.add('dark');
+                  } else {
+                    document.documentElement.classList.remove('dark');
+                  }
+                } catch (e) {}
+              })();
+            `,
+          }}
+        />
+      </head>
+      <body
+        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-slate-50 dark:bg-[#0F172A] text-[#111827] dark:text-slate-100 min-h-screen flex flex-col overflow-x-hidden transition-colors duration-150`}
+      >
         <AuthProvider>
-          <Navbar />
-          <main className="flex-1 flex flex-col">
-            {children}
-          </main>
+          <I18nProvider>
+            <Navbar />
+            <main className="flex-1 flex flex-col">{children}</main>
+          </I18nProvider>
         </AuthProvider>
       </body>
     </html>
