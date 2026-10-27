@@ -7,7 +7,7 @@ interface RouteContext {
   params: Promise<{ id: string }>;
 }
 
-// PATCH /api/bookings/[id]/cancel - Cancelar reserva
+// PATCH /api/bookings/[id] - Cancelación lógica de reserva
 export async function PATCH(
   _request: NextRequest,
   context: RouteContext
@@ -17,7 +17,7 @@ export async function PATCH(
 
     if (!session) {
       return NextResponse.json(
-        { error: "No autorizado." },
+        { error: "No autorizado. Inicia sesión para continuar." },
         { status: 401 }
       );
     }
@@ -30,18 +30,18 @@ export async function PATCH(
 
     if (!booking) {
       return NextResponse.json(
-        { error: "La reserva no existe." },
+        { error: "La reserva solicitada no existe." },
         { status: 404 }
       );
     }
 
-    // Regla: Solo el dueño de la reserva o un ADMIN pueden cancelarla
+    // Regla: Propiedad y permisos (solo creador o ADMIN) -> HTTP 403
     const isOwner = booking.userId === session.userId;
     const isAdmin = session.role === Role.ADMIN;
 
     if (!isOwner && !isAdmin) {
       return NextResponse.json(
-        { error: "No tienes permiso para cancelar esta reserva." },
+        { error: "Acceso denegado. No tienes permisos para cancelar esta reserva." },
         { status: 403 }
       );
     }
@@ -53,6 +53,25 @@ export async function PATCH(
       );
     }
 
+    // Regla: Ventana de 2 horas para usuarios con rol USER
+    // Si faltan menos de 2 horas para el startTime, rechazar con HTTP 409
+    if (!isAdmin) {
+      const now = new Date();
+      const diffMs = booking.startTime.getTime() - now.getTime();
+      const diffHours = diffMs / (1000 * 60 * 60);
+
+      if (diffHours < 2) {
+        return NextResponse.json(
+          {
+            error:
+              "Las reservas solo pueden ser canceladas por usuarios con al menos 2 horas de anticipación a la hora de inicio.",
+          },
+          { status: 409 }
+        );
+      }
+    }
+
+    // Regla: Borrado lógico mediante actualización de status a CANCELLED (sin borrado físico)
     const updatedBooking = await prisma.booking.update({
       where: { id },
       data: { status: "CANCELLED" },
@@ -66,9 +85,9 @@ export async function PATCH(
       { status: 200 }
     );
   } catch (error) {
-    console.error("Error en PATCH /api/bookings/[id]/cancel:", error);
+    console.error("Error en PATCH /api/bookings/[id]:", error);
     return NextResponse.json(
-      { error: "Error al cancelar la reserva." },
+      { error: "Error interno al cancelar la reserva." },
       { status: 500 }
     );
   }

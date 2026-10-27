@@ -85,6 +85,64 @@ export function SpaceDetailClient({ space }: SpaceDetailClientProps) {
       };
     }
 
+    // Regla: Ventana de anticipación máxima de 30 días
+    const maxAdvanceMs = 30 * 24 * 60 * 60 * 1000;
+    if (start.getTime() > now.getTime() + maxAdvanceMs) {
+      return {
+        totalHours: 0,
+        totalPrice: 0,
+        isValidDuration: false,
+        durationError:
+          locale === "es"
+            ? "No puedes reservar con más de 30 días de anticipación."
+            : "Cannot book more than 30 days in advance.",
+      };
+    }
+
+    // Regla: Minutos en punto obligatorios (:00)
+    if (start.getMinutes() !== 0 || end.getMinutes() !== 0) {
+      return {
+        totalHours: 0,
+        totalPrice: 0,
+        isValidDuration: false,
+        durationError:
+          locale === "es"
+            ? "Las reservas deben ser en horas en punto (:00)."
+            : "Bookings must be on the hour (:00).",
+      };
+    }
+
+    // Regla: Mismo día calendario
+    const isSameDay =
+      start.getFullYear() === end.getFullYear() &&
+      start.getMonth() === end.getMonth() &&
+      start.getDate() === end.getDate();
+
+    if (!isSameDay) {
+      return {
+        totalHours: 0,
+        totalPrice: 0,
+        isValidDuration: false,
+        durationError:
+          locale === "es"
+            ? "La reserva debe iniciar y terminar en el mismo día."
+            : "Booking must start and end on the same day.",
+      };
+    }
+
+    // Regla: Horario de operación (07:00 a 21:00)
+    if (start.getHours() < 7 || end.getHours() > 21 || (end.getHours() === 21 && end.getMinutes() > 0)) {
+      return {
+        totalHours: 0,
+        totalPrice: 0,
+        isValidDuration: false,
+        durationError:
+          locale === "es"
+            ? "El horario de atención es de 07:00 a 21:00."
+            : "Operating hours are from 07:00 to 21:00.",
+      };
+    }
+
     const diffMs = end.getTime() - start.getTime();
     if (diffMs <= 0) {
       return {
@@ -99,19 +157,19 @@ export function SpaceDetailClient({ space }: SpaceDetailClientProps) {
     }
 
     const hours = diffMs / (1000 * 60 * 60);
-    if (hours < 1) {
+    if (hours < 1 || hours > 4 || !Number.isInteger(hours)) {
       return {
         totalHours: 0,
         totalPrice: 0,
         isValidDuration: false,
         durationError:
           locale === "es"
-            ? "La reserva mínima es de 1 hora."
-            : "Minimum booking duration is 1 hour.",
+            ? "La duración debe ser de mínimo 1 hora y máximo 4 horas completas."
+            : "Duration must be between 1 and 4 full hours.",
       };
     }
 
-    const roundedHours = Math.ceil(hours);
+    const roundedHours = hours;
     const calculatedPrice = roundedHours * space.pricePerHour;
 
     return {
@@ -320,6 +378,7 @@ export function SpaceDetailClient({ space }: SpaceDetailClientProps) {
                   <input
                     type="datetime-local"
                     required
+                    step="3600"
                     value={startTime}
                     onChange={(e) => setStartTime(e.target.value)}
                     className="w-full px-3.5 py-3 text-xs sm:text-sm font-semibold rounded-xl border border-gray-200 dark:border-slate-700 bg-gray-50/50 dark:bg-slate-800 text-gray-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#6D28D9] transition-all"
@@ -333,6 +392,7 @@ export function SpaceDetailClient({ space }: SpaceDetailClientProps) {
                   <input
                     type="datetime-local"
                     required
+                    step="3600"
                     value={endTime}
                     onChange={(e) => setEndTime(e.target.value)}
                     className="w-full px-3.5 py-3 text-xs sm:text-sm font-semibold rounded-xl border border-gray-200 dark:border-slate-700 bg-gray-50/50 dark:bg-slate-800 text-gray-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-[#6D28D9] transition-all"

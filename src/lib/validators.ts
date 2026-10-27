@@ -30,7 +30,7 @@ export function validatePassword(password: string): ValidationResult {
   return { isValid: true };
 }
 
-// 3. Validación de Fechas y Horas de Reserva
+// 3. Validación de Fechas y Horas de Reserva (Reglas de Negocio Estrictas Riwi)
 export function validateBookingDates(
   startTimeStr: string,
   endTimeStr: string
@@ -53,10 +53,59 @@ export function validateBookingDates(
     };
   }
 
+  // Regla: No fechas pasadas
   if (start < now) {
     return {
       isValid: false,
       error: "No es posible reservar en fechas u horarios pasados.",
+    };
+  }
+
+  // Regla: Ventana de anticipación máxima de 30 días
+  const maxAdvanceMs = 30 * 24 * 60 * 60 * 1000;
+  if (start.getTime() > now.getTime() + maxAdvanceMs) {
+    return {
+      isValid: false,
+      error: "No es posible reservar con más de 30 días de anticipación.",
+    };
+  }
+
+  // Regla: Minutos en punto obligatorios (:00)
+  if (start.getMinutes() !== 0 || end.getMinutes() !== 0 || start.getSeconds() !== 0 || end.getSeconds() !== 0) {
+    return {
+      isValid: false,
+      error: "Las reservas deben realizarse en horas en punto (:00). No se permiten fracciones de hora.",
+    };
+  }
+
+  // Regla: Mismo día calendario
+  const isSameDay =
+    start.getFullYear() === end.getFullYear() &&
+    start.getMonth() === end.getMonth() &&
+    start.getDate() === end.getDate();
+
+  if (!isSameDay) {
+    return {
+      isValid: false,
+      error: "La reserva debe comenzar y finalizar en el mismo día.",
+    };
+  }
+
+  // Regla: Horario de operación estricto (07:00 a 21:00)
+  const startHour = start.getHours();
+  const endHour = end.getHours();
+
+  if (startHour < 7) {
+    return {
+      isValid: false,
+      error: "El coworking inicia operaciones a las 07:00.",
+    };
+  }
+
+  if (endHour > 21 || (endHour === 21 && (end.getMinutes() > 0 || end.getSeconds() > 0))) {
+    return {
+      isValid: false,
+      error: "El coworking finaliza operaciones a las 21:00. La reserva debe terminar a más tardar a las 21:00.",
     };
   }
 
@@ -69,14 +118,16 @@ export function validateBookingDates(
   }
 
   const diffInHours = diffInMs / (1000 * 60 * 60);
-  if (diffInHours < 1) {
+
+  // Regla: Duración estricta (1 a 4 horas completas)
+  if (diffInHours < 1 || diffInHours > 4 || !Number.isInteger(diffInHours)) {
     return {
       isValid: false,
-      error: "El tiempo mínimo de reserva es de 1 hora.",
+      error: "La duración de la reserva debe ser de mínimo 1 hora y máximo 4 horas completas.",
     };
   }
 
-  const totalHours = Math.ceil(diffInHours);
+  const totalHours = diffInHours;
 
   return {
     isValid: true,

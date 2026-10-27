@@ -51,7 +51,7 @@ export async function GET(): Promise<NextResponse> {
   }
 }
 
-// POST /api/bookings - Crear una nueva reserva con validación de traslape
+// POST /api/bookings - Crear una nueva reserva con blindaje estricto de reglas de negocio
 export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
     const session = await getServerSession();
@@ -73,16 +73,22 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       );
     }
 
-    // 1. Validar reglas de fechas (no pasado, fin > inicio, mínimo 1 hora)
+    // 1. Validar reglas de fechas y horarios (horas en punto :00, 1-4h duración, 07:00 a 21:00, max 30 días)
     const dateValidation = validateBookingDates(startTime, endTime);
-    if (!dateValidation.isValid || !dateValidation.startTime || !dateValidation.endTime || !dateValidation.totalHours) {
+    if (
+      !dateValidation.isValid ||
+      !dateValidation.startTime ||
+      !dateValidation.endTime ||
+      !dateValidation.totalHours
+    ) {
       return NextResponse.json(
-        { error: dateValidation.error || "Rango de fechas no válido." },
+        { error: dateValidation.error || "Rango de fechas y horas no válido." },
         { status: 400 }
       );
     }
 
     const { startTime: start, endTime: end, totalHours } = dateValidation;
+    const now = new Date();
 
     // 2. Verificar existencia y estado del espacio
     const space = await prisma.space.findUnique({
@@ -96,42 +102,84 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       );
     }
 
+    // Regla: Rechazar si el espacio tiene isActive = false (HTTP 400)
     if (!space.isActive) {
       return NextResponse.json(
-        { error: "Este espacio no se encuentra habilitado para nuevas reservas." },
+        { error: "Este espacio se encuentra inactivo y no admite reservas." },
         { status: 400 }
       );
     }
 
-    // 3. Validar solapamiento de horarios (Double Booking check)
-    // Existe conflicto si: (start < existing.endTime) Y (end > existing.startTime)
-    const overlappingBooking = await prisma.booking.findFirst({
+    // 3. Regla: Límite de reservas activas futuras (máximo 3 por usuario) -> HTTP 409
+    const activeFutureBookingsCount = await prisma.booking.count({
       where: {
-        spaceId,
+        userId: session.userId,
+        status: "CONFIRMED",
+        endTime: { gte: now },
+      },
+    });
+
+    if (activeFutureBookingsCount >= 3) {
+      return NextResponse.json(
+        {
+          error:
+            "Has alcanzado el límite máximo de 3 reservas activas simultáneas. Cancela o completa una antes de reservar de nuevo.",
+        },
+        { status: 409 }
+      );
+    }
+
+    // 4. Regla: Solapamiento por usuario autenticado (no puede tener 2 reservas al mismo tiempo) -> HTTP 409
+    const userOverlap = await prisma.booking.findFirst({
+      where: {
+        userId: session.userId,
         status: "CONFIRMED",
         startTime: { lt: end },
         endTime: { gt: start },
       },
     });
 
-    if (overlappingBooking) {
+    if (userOverlap) {
       return NextResponse.json(
-        { error: "El espacio ya está reservado en el horario seleccionado. Elige otro intervalo." },
+        {
+          error:
+            "Ya cuentas con otra reserva confirmada en este mismo rango horario en otro espacio.",
+        },
         { status: 409 }
       );
     }
 
-    // 4. Calcular costo total dinámico en servidor
+    // 5. Regla: Solapamiento por espacio (Double Booking check) -> HTTP 409
+    const spaceOverlap = await prisma.booking.findFirst({
+      where: {
+        spaceId: space.id,
+        status: "CONFIRMED",
+        startTime: { lt: end },
+        endTime: { gt: start },
+      },
+    });
+
+    if (spaceOverlap) {
+      return NextResponse.json(
+        {
+          error:
+            "El espacio ya está reservado en el horario seleccionado. Si una reserva termina a las 12:00, otra puede iniciar a las 12:00.",
+        },
+        { status: 409 }
+      );
+    }
+
+    // 6. Cálculo seguro de precio en el servidor (horas * pricePerHour). Se ignora cualquier valor cliente.
     const totalPrice = space.pricePerHour * totalHours;
 
-    // 5. Crear la reserva
+    // 7. Crear la reserva confirmada
     const newBooking = await prisma.booking.create({
       data: {
         userId: session.userId,
         spaceId: space.id,
         startTime: start,
         endTime: end,
-        totalHours, 
+        totalHours,
         totalPrice,
         status: "CONFIRMED",
       },
@@ -145,6 +193,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         },
       },
     });
+
     return NextResponse.json(
       {
         message: "Reserva realizada exitosamente.",

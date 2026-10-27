@@ -81,5 +81,3 @@ EXPOSE 3000
 
 # Ejecutar el servidor standalone optimizado
 CMD ["node", "server.js"]
-
-CMD ["node", "server.js"]
