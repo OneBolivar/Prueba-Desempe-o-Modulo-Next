@@ -1,13 +1,7 @@
 import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
 import { cookies } from "next/headers";
-import { Role } from "@prisma/client";
-
-export interface TokenPayload {
-  userId: string;
-  email: string;
-  role: Role;
-}
+import { TokenPayload } from "@/types/auth";
 
 const ACCESS_SECRET = process.env.JWT_ACCESS_SECRET || "fallback_access_secret_cospace_2026";
 const REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || "fallback_refresh_secret_cospace_2026";
@@ -21,17 +15,17 @@ export async function comparePassword(plain: string, hashed: string): Promise<bo
   return bcrypt.compare(plain, hashed);
 }
 
-//  Generación de Access Token (15 minutos)
+// Generación de Access Token (15 minutos)
 export function signAccessToken(payload: TokenPayload): string {
   return jwt.sign(payload, ACCESS_SECRET, { expiresIn: "15m" });
 }
 
-//  Generación de Refresh Token (7 días)
+// Generación de Refresh Token (7 días)
 export function signRefreshToken(payload: TokenPayload): string {
   return jwt.sign(payload, REFRESH_SECRET, { expiresIn: "7d" });
 }
 
-//  Verificación de tokens
+// Verificación de tokens
 export function verifyAccessToken(token: string): TokenPayload | null {
   try {
     return jwt.verify(token, ACCESS_SECRET) as TokenPayload;
@@ -48,7 +42,7 @@ export function verifyRefreshToken(token: string): TokenPayload | null {
   }
 }
 
-//  Asignación de cookies httpOnly seguras en la cabecera
+// Asignación de cookies httpOnly seguras en la cabecera
 export async function setAuthCookies(accessToken: string, refreshToken: string): Promise<void> {
   const cookieStore = await cookies();
   const isProduction = process.env.NODE_ENV === "production";
@@ -58,7 +52,7 @@ export async function setAuthCookies(accessToken: string, refreshToken: string):
     secure: isProduction,
     sameSite: "lax",
     path: "/",
-    maxAge: 15 * 60, // 15 minutos en segundos
+    maxAge: 15 * 60,
   });
 
   cookieStore.set("refresh_token", refreshToken, {
@@ -66,11 +60,11 @@ export async function setAuthCookies(accessToken: string, refreshToken: string):
     secure: isProduction,
     sameSite: "lax",
     path: "/",
-    maxAge: 7 * 24 * 60 * 60, // 7 días en segundos
+    maxAge: 7 * 24 * 60 * 60,
   });
 }
 
-//  Limpieza de cookies de autenticación
+// Limpieza de cookies de autenticación
 export async function clearAuthCookies(): Promise<void> {
   const cookieStore = await cookies();
   cookieStore.delete("access_token");
